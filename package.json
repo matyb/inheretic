@@ -1,0 +1,34 @@
+{
+  "name": "inheretic",
+  "version": "0.0.0",
+  "description": "An inheritance library for package.json files (suited to mono repos)",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node node_modules/jasmine/bin/jasmine src/**.spec.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matyb/inheretic"
+  },
+  "keywords": [
+    "inheritance",
+    "package.json",
+    "child",
+    "parent",
+    "module",
+    "dry",
+    "dependencies",
+    "monorepo"
+  ],
+  "author": "Mat Bentley",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/matyb/inheretic/issues"
+  },
+  "homepage": "https://github.com/matyb/inheretic",
+  "devDependencies": {
+    "fs-extra": "~6.0.1",
+    "jasmine": "~3.1.0",
+    "rimraf": "^2.6.2"
+  }
+}
