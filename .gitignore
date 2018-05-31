@@ -1,3 +1,4 @@
 example-app/node_modules
 node_modules/inheretic/node_modules/ 
 node_modules/inheretic/example-app/node_modules/ 
+.vscode

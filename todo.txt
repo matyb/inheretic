@@ -1,2 +1,3 @@
 - do 2 passes or build tree to ensure child is already inherited up before inheriting down to a child
 - handle existence of property, like arrays and objects and not clobbering if a property is already there, etc.
+- make file io async
