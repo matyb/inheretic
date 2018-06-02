@@ -5,8 +5,5 @@ language: ruby
 services:
   - docker
 
-before_install:
-  - docker build -t inheritic docker
-
 script:
   - docker build .
