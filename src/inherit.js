@@ -39,32 +39,20 @@ function chainInherit(families, writer, packageName, [key, ...tail] = Object.key
     if(family){
         if(family.parent && family.parent._filename){
             const parentDir = path.dirname(family.parent._filename);
-            [families[path.resolve(parentDir, path.basename(family.parent._filename))],
-             families[path.resolve(parentDir, packageName)]].forEach((parentFamily) => {
-                if(parentFamily){
-                    const index = tail.indexOf(parentFamily._filename);
-                    if(index > -1){
-                        (function swap(array, x, y){ // todo array.prototype, lib?
-                            let tmp = array[x];
-                            array[x] = array[y];
-                            array[y] = tmp;
-                        }(tail, index, 0));
-                    }
-                    module.exports.chainInherit(families, writer, packageName, tail);
-                    family.parent = parentFamily.child;
-                    function replace(families, clobberMe, withMe){
-                        Object.keys(families).forEach( key => {
-                            const {parent, child} = families[key];
-                            if(parent === clobberMe) {
-                                families[key].parent = withMe;
-                            } else if (child === clobberMe) {
-                                families[key].child = withMe;
-                            }
-                        });
-                    }
-                    replace(families, family.parent, parentFamily.child);
-                    tail.splice(0, 1);
+            const parentFamilies = [families[path.resolve(parentDir, path.basename(family.parent._filename))],
+                                    families[path.resolve(parentDir, packageName)]].filter( x => x );
+            _.uniq(parentFamilies).forEach((parentFamily) => {
+                const index = tail.indexOf(parentFamily.child._filename);
+                if(index > -1){
+                    (function swap(array, x, y){ // todo array.prototype, lib?
+                        let tmp = array[x];
+                        array[x] = array[y];
+                        array[y] = tmp;
+                    }(tail, index, 0));
                 }
+                module.exports.chainInherit(families, writer, packageName, tail);
+                family.parent = parentFamily.child;
+                tail.splice(0, 1);
             });
         }
         module.exports.inherit(family.parent, family.child, writer);
@@ -74,7 +62,7 @@ function chainInherit(families, writer, packageName, [key, ...tail] = Object.key
 function packageToFamily(packageName, fileSystem = fs) {
     return (package) => {
         const parsed = fileToJson(package, fileSystem);
-        parsed._filename = package;
+        parsed._filename = path.resolve(package);
         if(parsed.parent){
             function findParent(package, parent){
               parent = path.resolve(path.dirname(package), parent);
@@ -82,6 +70,8 @@ function packageToFamily(packageName, fileSystem = fs) {
                 return parent;
               }
             }
+            // TODO use path basename/dirname
+            // TODO refactor the parents like u did in the array parentFamilies
             const lastFileSep = parsed.parent.replace(/\\/g, "/").lastIndexOf('/');
             const originalParent = parsed.parent.substring(lastFileSep + 1);
             const intendedParent = findParent(package, parsed.parent);
@@ -89,7 +79,7 @@ function packageToFamily(packageName, fileSystem = fs) {
             const parent = intendedParent || failSafeParent;
             if(parent){
                 const json = fileToJson(parent, fileSystem);
-                json._filename = path.resolve(path.dirname(package), originalParent);
+                json._filename = path.resolve(path.dirname(parent), originalParent);
                 const results = [{child: parsed, parent: json}];
                 if(path.resolve(json._filename) !== path.resolve(parent)){
                     const clone = _.clone(json);
