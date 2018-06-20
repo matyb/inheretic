@@ -2,6 +2,7 @@ describe('inheretic', () => {
   const fs = require('fs');
   const path = require('path');
   const index = require('./inherit');
+  const _ = require('lodash');
 
   beforeAll(() => {
     try{ fs.mkdirSync('./tmp'); } catch(x) {}
@@ -45,40 +46,99 @@ describe('inheretic', () => {
       const child = {ck:'cv', _filename: '/child', parent: '/parent'};
       const parent = {pk:'pv'};
       spyOn(index, 'inherit');
-      index.chainInherit({'/child': {child: child, parent: parent}}, fs.writeFileSync, '');
+      index.chainInherit({'/child': {child: child, parent: parent}}, fs.writeFileSync);
       expect(index.inherit).toHaveBeenCalledWith(parent, child, fs.writeFileSync);
     });
     describe('when order may matter', () => {
       const parent = {pk:'pv', _filename: '/parent'};
       const child = {ck:'cv', _filename: '/child', parent: '/parent'};
       const grandchild = {gk:'gv', _filename: '/grandchild', parent: '/child'};
-      function assertInheritanceEldestFirst(families){
-        const callOrder = []
-        index.inherit = (parent, child) => callOrder.push({
-          parent:parent, child:child
+      describe('chainInherit', () => {
+        function assertChainInheritInKeyOrder(families, expected){
+          const inherited = []
+          index.inherit = (parent, child) => inherited.push({
+            parent:parent, child:child
+          });
+          index.chainInherit(families(parent, child, grandchild), () => {});
+          expect(expected).toEqual(inherited);
+        }
+        it('inherits from parent -> child -> grandchild', () => {
+          assertChainInheritInKeyOrder((parent, child, grandchild) => {
+            return {
+              '/child': {child: child, parent: parent},
+              '/grandchild': {child: grandchild, parent: child}
+            };
+          }, [{parent: parent, child: child}, {parent: child,  child: grandchild}]);
         });
-        index.chainInherit(families(parent, child, grandchild), () => {}, '');
-        expect([
-          {parent: parent, child: child},
-          {parent: child,  child: grandchild}
-        ]).toEqual(callOrder);
-      }
-      it('inherits from parent -> child -> grandchild', () => {
-        assertInheritanceEldestFirst((parent, child, grandchild) => {
-          return {
-            '/child': {child: child, parent: parent},
-            '/grandchild': {child: grandchild, parent: child}
-          };
+        it('inherits from parent -> child -> grandchild - compliment', () => {
+          assertChainInheritInKeyOrder((parent, child, grandchild) => {
+            return {
+              '/grandchild': {child: grandchild, parent: child},
+              '/child': {child: child, parent: parent}
+            };
+          }, [{parent: child,  child: grandchild}, {parent: parent, child: child}]);
         });
       });
-      it('inherits from parent -> child -> grandchild - compliment', () => {
-        assertInheritanceEldestFirst((parent, child, grandchild) => {
-          return {
-            '/grandchild': {child: grandchild, parent: child},
-            '/child': {child: child, parent: parent}
-          };
-        });
+    });
+  });
+
+  describe('cache', () => {
+    describe('_keyFn', () => {
+      it('standardizes separator (\\ -> /)', () => {
+        expect(index.cache._keyFn('\\yo\\mama')).toEqual('/yo/mama');
       });
+      it('standardizes separator (/ -> /)', () => {
+        expect(index.cache._keyFn('/yo/mama')).toEqual('/yo/mama');
+      });
+    });
+    describe('_clear', () => {
+      const cache = _.cloneDeep(index.cache);
+      afterEach(() => {
+        index.cache = cache;
+      });
+      it('clears cached data when called', () => {
+        index.cache.yo = 'mama';
+        index.cache._clear();
+        expect(index.yo).toBe(undefined);
+      });
+      it('preserves its own functions', () => {
+        index.cache._clear();
+        expect(Object.keys(index.cache)).toEqual(Object.keys(cache));
+      });
+    });
+  });
+
+  describe('numberOfHops', () => {
+    const families = {
+      '/some/grandkid' : {
+        'parent' : {
+          '_filename' : '/some/kid'
+        }
+      },
+      '/some/kid' : {
+        'parent' : {
+          '_filename' : '/some/parent'
+        }
+      },
+      '/some/parent' : {
+        'parent' : {
+          '_filename' : '/some/grandparent'
+        }
+      },
+      '/some/grandparent' : {}
+    };
+    const countHops = index.numberOfHops(families);
+    it('counts hops to root of tree', () => {
+      expect(['/some/grandkid',
+              '/some/kid',
+              '/some/parent',
+              '/some/grandparent'].map(countHops)).toEqual([3,2,1,0]);
+    });
+    it('counts hops to root of tree - compliment', () => {
+      expect(['/some/grandparent',
+              '/some/parent',
+              '/some/kid',
+              '/some/grandkid'].map(countHops)).toEqual([0,1,2,3]);
     });
   });
 
@@ -95,7 +155,7 @@ describe('inheretic', () => {
       return { readFileSync: fileContents, existsSync: fileContents };
     }
     it('creates the json for package.json and its parent if a template', () => {
-      const packageToFamily = index.packageToFamily('', fileSystem({
+      const packageToFamily = index.packageToFamily(fileSystem({
         '/child': '{"parent":"/parent"}', 
         '/parent': '{"ya":"buddy"}'
       }));
@@ -104,7 +164,7 @@ describe('inheretic', () => {
         .toEqual(packageToFamily(path.resolve('/child')));
     });
     it('returns [] if no parent', () => {
-      const packageToFamily = index.packageToFamily('', fileSystem({
+      const packageToFamily = index.packageToFamily(fileSystem({
         '/child': '{"yoyoyo":"boyeeeeee"}',
         '/parent': '{"ya":"buddy"}'
       }));

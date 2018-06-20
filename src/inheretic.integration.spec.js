@@ -10,15 +10,9 @@ describe('inherit', () => {
   }
 
   function time(label, lambda, start = new Date()){
-    try{
       const obj = lambda();
       console.log(`'${label}' took: ${(new Date().getTime() - start.getTime()) / 1000}s.`);
       return obj;
-    } catch (x) {
-      console.log(`'${label}' died in: ${(new Date().getTime() - start.getTime()) / 1000}s.`);
-      console.error(x);
-      throw x;
-    }
   }
 
   function main(writer){
