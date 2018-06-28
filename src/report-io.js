@@ -20,10 +20,11 @@ module.exports = function ReportIO(){
         if(typeof collection === 'function') {
           collection = collection();
         }
-        const path = __dirname.substring(0, __dirname.lastIndexOf('src')) + `tmp/packages/node_modules/${moduleName}/${fileName}`;
-        const result = collection.find((entry) => entry.file === path);
+        const absolutePath = path.join(__dirname.substring(0, __dirname.lastIndexOf('src')), 
+                                      `tmp/packages/node_modules/${moduleName}/${fileName}`);
+        const result = collection.find((entry) => entry.file === absolutePath);
         if(!result){
-          console.log('NOTHING FOUND FOR: ', path, ' in ', collection.map(entry => entry.file));
+          console.log('NOTHING FOUND FOR: ', absolutePath, ' in ', collection.map(entry => entry.file));
         } else {
           return result.contents;
         }

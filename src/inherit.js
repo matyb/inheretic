@@ -3,7 +3,7 @@ const path = require('path');
 const _ = require('lodash');
 const diveIntoTypes = ['object', 'function'];
 const merge = require('./merge')(diveIntoTypes);
-const cache = {_keyFn: (file) => path.resolve(file.replace(/\\/g, "/"))};
+const cache = {_keyFn: path.resolve};
 cache._clear = () => Object.keys(cache).forEach((key) => {
     if(key !== '_keyFn' && key !== '_clear'){
         delete cache[key];

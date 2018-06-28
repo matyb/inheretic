@@ -84,11 +84,8 @@ describe('inheretic', () => {
 
   describe('cache', () => {
     describe('_keyFn', () => {
-      it('standardizes separator (\\ -> /)', () => {
-        expect(index.cache._keyFn('\\yo\\mama')).toEqual('/yo/mama');
-      });
-      it('standardizes separator (/ -> /)', () => {
-        expect(index.cache._keyFn('/yo/mama')).toEqual('/yo/mama');
+      it('resolves full path', () => {
+        expect(index.cache._keyFn('/yo/mama')).toEqual(path.resolve('/yo/mama'));
       });
     });
     describe('_clear', () => {
@@ -156,10 +153,10 @@ describe('inheretic', () => {
     }
     it('creates the json for package.json and its parent if a template', () => {
       const packageToFamily = index.packageToFamily(fileSystem({
-        '/child': '{"parent":"/parent"}', 
+        '/child': `{"parent":"/parent"}`, 
         '/parent': '{"ya":"buddy"}'
       }));
-      expect([{parent: {ya:'buddy', _filename: '/parent'},
+      expect([{parent: {ya:'buddy', _filename: path.resolve('/parent')},
                child: {parent:'/parent', _filename: path.resolve('/child')}}])
         .toEqual(packageToFamily(path.resolve('/child')));
     });
