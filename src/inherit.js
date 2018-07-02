@@ -3,18 +3,14 @@ const path = require('path');
 const _ = require('lodash');
 const diveIntoTypes = ['object', 'function'];
 const merge = require('./merge')(diveIntoTypes);
-const cache = {_keyFn: path.resolve};
-cache._clear = () => Object.keys(cache).forEach((key) => {
-    if(key !== '_keyFn' && key !== '_clear'){
-        delete cache[key];
-    }
-});
+
+var cache = require('./cache')()
 
 const fileToJson = (file, fileSystem = fs) => {
-    const key = cache._keyFn(file);
-    return cache[key] || (() => {
+    const key =  module.exports.cache._keyFn(file);
+    return module.exports.cache[key] || (() => {
         const json = JSON.parse(fileSystem.readFileSync(key));
-        cache[key] = json;
+        module.exports.cache[key] = json;
         return fileToJson(key, fileSystem);
     })();
 };
@@ -25,10 +21,10 @@ const inherit = (parent, child, writer = fs.writeFileSync) => {
         const clone = _.cloneDeep(child);
         delete clone._filename;
         delete clone._generated;
-        const fileName = cache._keyFn(path.join(path.dirname(child._filename), "package.json"));
+        const fileName = module.exports.cache._keyFn(path.join(path.dirname(child._filename), "package.json"));
         writer(fileName, JSON.stringify(clone, null, 4));
         child._generated = true;
-        cache[fileName] = child;
+        module.exports.cache[fileName] = child;
         console.log(`Wrote: '${fileName}' successfully.`);
     } 
 };
@@ -91,6 +87,7 @@ function inheritCli(parent, writer, packageName = 'package.json'){
     const families = filesToFamilies(
         path.join(process.cwd, '/../', parent) || path.resolve(parent), 
         packageName);
+    module.exports.cache = require('./cache')();
     const sorted = _.sortBy(Object.keys(families), 
                             module.exports.numberOfHops(families));
     module.exports.chainInherit(families, writer, sorted);

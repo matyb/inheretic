@@ -8,8 +8,8 @@ describe('inheretic', () => {
     try{ fs.mkdirSync('./tmp'); } catch(x) {}
     require('fs-extra').copySync('example-app', './tmp');
   });
-  beforeEach(index.cache._clear);
-  afterEach(index.cache._clear);
+  beforeEach(() => index.cache = require('./cache')());
+  afterEach(() => index.cache = require('./cache')());
   afterAll((done) => {
     require('rimraf')('./tmp', done);
   });
@@ -82,29 +82,6 @@ describe('inheretic', () => {
     });
   });
 
-  describe('cache', () => {
-    describe('_keyFn', () => {
-      it('resolves full path', () => {
-        expect(index.cache._keyFn('/yo/mama')).toEqual(path.resolve('/yo/mama'));
-      });
-    });
-    describe('_clear', () => {
-      const cache = _.cloneDeep(index.cache);
-      afterEach(() => {
-        index.cache = cache;
-      });
-      it('clears cached data when called', () => {
-        index.cache.yo = 'mama';
-        index.cache._clear();
-        expect(index.yo).toBe(undefined);
-      });
-      it('preserves its own functions', () => {
-        index.cache._clear();
-        expect(Object.keys(index.cache)).toEqual(Object.keys(cache));
-      });
-    });
-  });
-
   describe('numberOfHops', () => {
     const families = {
       '/some/grandkid' : {
@@ -140,6 +117,8 @@ describe('inheretic', () => {
   });
 
   describe('packageToFamily', () => {
+    beforeEach(() => index.cache = require('./cache')());
+    afterEach(() => index.cache = require('./cache')());
     function fileSystem(files) {
       Object.keys(files).forEach((file) => {
         const tmp = path.resolve(file);
