@@ -1,4 +1,4 @@
-describe('inheretic', () => {
+describe('inherit', () => {
   const fs = require('fs');
   const path = require('path');
   const index = require('./inherit');

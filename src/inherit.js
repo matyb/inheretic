@@ -85,7 +85,7 @@ function numberOfHops(families) {
 
 function inheritCli(parent, writer, packageName = 'package.json'){
     const families = filesToFamilies(
-        path.join(process.cwd, '/../', parent) || path.resolve(parent), 
+        path.join(process.cwd(), parent) || path.resolve(parent), 
         packageName);
     module.exports.cache = require('./cache')();
     const sorted = _.sortBy(Object.keys(families), 

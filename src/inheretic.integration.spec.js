@@ -19,9 +19,9 @@ describe('inherit', () => {
     return () => {
       const cwd = process.cwd;
       try {
-        process.cwd = __dirname;
+        process.cwd = () => __dirname;
         require('./inherit').cache._clear();
-        require('./inherit')('tmp', writer, 'template.package.json');
+        require('./inherit')('../tmp', writer, 'template.package.json');
       } finally {
         process.cwd = cwd;
       }
